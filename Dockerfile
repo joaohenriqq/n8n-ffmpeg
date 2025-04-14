@@ -16,8 +16,6 @@ RUN apk add --no-cache \
   unzip \
   tar \
   jq \
-  openssh-client \
-  imagemagick-libs \
-  imagemagick6
+  openssh-client
 
 USER node
