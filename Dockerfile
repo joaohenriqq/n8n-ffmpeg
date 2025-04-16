@@ -1,8 +1,8 @@
-FROM n8nio/n8n:1.86.1
+FROM n8nio/n8n:1.88.0
 
 USER root
 
-RUN apk add --no-cache \
+RUN apk update && apk upgrade && apk add --no-cache \
   ffmpeg \
   lame \
   libvpx \
