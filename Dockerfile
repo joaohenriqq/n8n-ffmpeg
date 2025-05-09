@@ -1,51 +1,90 @@
+FROM n8nio/n8n:latest AS builder
+
+USER root
+
+# 1) Instala dependências oficiais do Alpine para compilar FFmpeg
+RUN apk update && apk add --no-cache \
+    autoconf \
+    automake \
+    build-base \
+    cmake \
+    git \
+    libass-dev \
+    libfreetype-dev \
+    libvorbis-dev \
+    libogg-dev \
+    libtheora-dev \
+    libx264-dev \
+    libx265-dev \
+    libvpx-dev \
+    libopus-dev \
+    libmp3lame-dev \
+    librubberband-dev \
+    libsoxr-dev \
+    libsdl2-dev \
+    libwebp-dev \
+    xz-dev \
+    zlib-dev \
+    yasm \
+    pkgconfig \
+    nasm \
+    wget \
+    tar
+
+WORKDIR /ffmpeg
+
+# 2) Baixa o tarball oficial do FFmpeg (ajuste a versão se desejar)
+ARG FFMPEG_VERSION=6.0
+RUN wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz \
+ && tar -xJf ffmpeg-${FFMPEG_VERSION}.tar.xz --strip-components=1 \
+ && rm ffmpeg-${FFMPEG_VERSION}.tar.xz
+
+# 3) Configura e compila com todos os filtros/codecs principais
+RUN ./configure \
+      --prefix=/usr/local \
+      --enable-gpl \
+      --enable-nonfree \
+      --enable-libass \
+      --enable-libfreetype \
+      --enable-libvorbis \
+      --enable-libx264 \
+      --enable-libx265 \
+      --enable-libvpx \
+      --enable-libopus \
+      --enable-libmp3lame \
+      --enable-librubberband \
+      --enable-libsoxr \
+      --enable-libwebp \
+      --enable-filter=zscale \
+      --enable-filter=frei0r \
+      --enable-postproc \
+      --disable-debug \
+    && make -j$(nproc) \
+    && make install \
+    && make distclean
+
+# ------------------------------------------------------------
+# Imagem final: n8n + FFmpeg full compilado
+# ------------------------------------------------------------
 FROM n8nio/n8n:latest
 
 USER root
 
-ARG GLIBC_VER="2.35-r1"
+# 4) Copia ffmpeg/ffprobe do builder, instala auxiliares que você já usava
+COPY --from=builder /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=builder /usr/local/bin/ffprobe /usr/local/bin/ffprobe
 
-# 1) Instala dependências de build, gcompat e glibc
-RUN apk update && apk add --no-cache --virtual .build-deps \
-      curl \
-      binutils \
-      zstd \
-      gcompat \
-    && curl -LfsS https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
-         -o /etc/apk/keys/sgerrand.rsa.pub \
-    && curl -LfsS https://alpine-pkgs.sgerrand.com/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
-         -o /tmp/glibc-${GLIBC_VER}.apk \
-    && curl -LfsS https://alpine-pkgs.sgerrand.com/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
-         -o /tmp/glibc-bin-${GLIBC_VER}.apk \
-    && apk add --force-overwrite --no-cache \
-         /tmp/glibc-${GLIBC_VER}.apk \
-         /tmp/glibc-bin-${GLIBC_VER}.apk \
-    && rm /tmp/glibc-*.apk \
-    && apk del .build-deps
-
-# 2) Instala ferramentas auxiliares e remove o ffmpeg minimal
-RUN apk add --no-cache \
-      ca-certificates \
-      curl \
-      xz \
-      lame \
-      libvpx \
-      x264 \
-      imagemagick \
-      ghostscript \
-      tesseract-ocr \
-      zip \
-      unzip \
-      tar \
-      jq \
-      openssh-client \
-    && apk del ffmpeg
-
-# 3) Baixa e extrai o FFmpeg full do BtbN
-RUN cd /tmp \
- && curl -fsSL \
-      https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
-      -o ffmpeg.tar.xz \
- && tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 \
- && rm ffmpeg.tar.xz
+RUN apk update && apk upgrade && apk add --no-cache \
+    imagemagick \
+    ghostscript \
+    tesseract-ocr \
+    curl \
+    wget \
+    zip \
+    unzip \
+    tar \
+    jq \
+    openssh-client
 
 USER node
+
