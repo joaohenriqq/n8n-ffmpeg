@@ -19,8 +19,8 @@ RUN apk update && apk add --no-cache \
     libvpx-dev \
     opus-dev \
     lame-dev \
-    librubberband-dev \       # <— aqui
-    soxr-dev \
+    librubberband-dev \
+    libsoxr-dev \
     sdl2-dev \
     libwebp-dev \
     xz-dev \
@@ -53,13 +53,39 @@ RUN ./configure \
       --enable-libvpx \
       --enable-libopus \
       --enable-libmp3lame \
-      --enable-librubberband \   # <— e aqui
+      --enable-librubberband \
       --enable-libsoxr \
       --enable-libwebp \
       --enable-postproc \
       --enable-filter=zscale \
       --enable-filter=frei0r \
-      --disable-debug \
-    && make -j$(nproc) \
-    && make install \
-    && make distclean
+      --disable-debug && \
+    make -j$(nproc) && \
+    make install && \
+    make distclean
+
+# ------------------------------------------------------------
+# Imagem final: n8n + FFmpeg compilado
+# ------------------------------------------------------------
+FROM n8nio/n8n:latest
+
+USER root
+
+# 4) Copia apenas os binários compilados
+COPY --from=builder /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=builder /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+
+# 5) Instala auxiliares que você já usava
+RUN apk update && apk add --no-cache \
+    imagemagick \
+    ghostscript \
+    tesseract-ocr \
+    curl \
+    wget \
+    zip \
+    unzip \
+    tar \
+    jq \
+    openssh-client
+
+USER node
