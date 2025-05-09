@@ -2,20 +2,29 @@ FROM n8nio/n8n:latest
 
 USER root
 
-# 1) Instala glibc no Alpine para compatibilidade com builds glibc-linked
-RUN apk update && apk add --no-cache \
-      ca-certificates \
-      wget \
-    && wget -q -O /etc/apk/keys/sgerrand.rsa.pub \
-         https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
-    && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.36-r0/glibc-2.36-r0.apk \
-    && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.36-r0/glibc-bin-2.36-r0.apk \
-    && apk add --no-cache glibc-2.36-r0.apk glibc-bin-2.36-r0.apk \
-    && rm glibc-2.36-r0.apk glibc-bin-2.36-r0.apk \
-    && update-ca-certificates
+ARG GLIBC_VER="2.35-r1"
 
-# 2) Instala suas ferramentas auxiliares e substitui o FFmpeg por um build completo
+# 1) Instala dependências de build, gcompat e glibc
+RUN apk update && apk add --no-cache --virtual .build-deps \
+      curl \
+      binutils \
+      zstd \
+      gcompat \
+    && curl -LfsS https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
+         -o /etc/apk/keys/sgerrand.rsa.pub \
+    && curl -LfsS https://alpine-pkgs.sgerrand.com/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
+         -o /tmp/glibc-${GLIBC_VER}.apk \
+    && curl -LfsS https://alpine-pkgs.sgerrand.com/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
+         -o /tmp/glibc-bin-${GLIBC_VER}.apk \
+    && apk add --force-overwrite --no-cache \
+         /tmp/glibc-${GLIBC_VER}.apk \
+         /tmp/glibc-bin-${GLIBC_VER}.apk \
+    && rm /tmp/glibc-*.apk \
+    && apk del .build-deps
+
+# 2) Instala ferramentas auxiliares e remove o ffmpeg minimal
 RUN apk add --no-cache \
+      ca-certificates \
       curl \
       xz \
       lame \
@@ -29,11 +38,14 @@ RUN apk add --no-cache \
       tar \
       jq \
       openssh-client \
-    && apk del ffmpeg \
-    && cd /tmp \
-    && curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
-         -o ffmpeg.tar.xz \
-    && tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 \
-    && rm ffmpeg.tar.xz
+    && apk del ffmpeg
+
+# 3) Baixa e extrai o FFmpeg full do BtbN
+RUN cd /tmp \
+ && curl -fsSL \
+      https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
+      -o ffmpeg.tar.xz \
+ && tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 \
+ && rm ffmpeg.tar.xz
 
 USER node
