@@ -1,50 +1,41 @@
 ################################################################
-# 1) STAGE builder · Debian + libs extras + FFmpeg git-master
+# 1 · Stage builder — Ubuntu 24.04 + FFmpeg git-master
 ################################################################
-FROM debian:12-slim AS builder
+FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
-USER root
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git build-essential autoconf automake cmake pkg-config yasm nasm \
-    libfreetype6-dev libass-dev libvorbis-dev libogg-dev libtheora-dev \
+    autoconf automake build-essential cmake git pkg-config yasm nasm \
+    curl ca-certificates zlib1g-dev libtool libnuma-dev \
+    # --- filtros e codecs principais ---
+    libfreetype6-dev libass-dev frei0r-plugins-dev librubberband-dev \
+    libsoxr-dev libmp3lame-dev libopus-dev libvorbis-dev libtheora-dev \
     libx264-dev libx265-dev libvpx-dev libaom-dev libsvtav1-dev \
-    libmp3lame-dev libopus-dev librubberband-dev libsoxr-dev frei0r-plugins-dev \
-    libwebp-dev libopenjp2-7-dev && \
+    libwebp-dev libopenjp2-7-dev libfdk-aac-dev && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ffmpeg
 RUN git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git .
 
-RUN ./configure \
-      --prefix=/usr/local \
-      --enable-gpl --enable-nonfree --enable-version3 \
-      --enable-libass --enable-libfreetype \
-      --enable-libmp3lame --enable-libopus --enable-libvorbis \
-      --enable-libx264 --enable-libx265 --enable-libvpx \
-      --enable-libaom  --enable-libsvtav1 \
-      --enable-libwebp --enable-libopenjpeg \
+RUN ./configure --prefix=/usr/local --enable-gpl --enable-version3 --enable-nonfree \
+      --enable-libass --enable-libfreetype --enable-frei0r \
       --enable-librubberband --enable-libsoxr \
-      --enable-libtheora --enable-frei0r \
-      --enable-postproc  --enable-filter=zscale --enable-filter=frei0r \
+      --enable-libmp3lame --enable-libopus --enable-libvorbis --enable-libtheora \
+      --enable-libx264 --enable-libx265 --enable-libvpx \
+      --enable-libaom  --enable-libsvtav1  --enable-libfdk_aac \
+      --enable-libwebp --enable-libopenjpeg \
+      --enable-postproc --enable-filter=zscale --enable-filter=frei0r \
       --disable-debug && \
-    make -j"$(nproc)" && \
-    make install && \
-    make distclean
+    make -j"$(nproc)" && make install && make distclean
 
 ################################################################
-# 2) STAGE final · n8n (Debian) + FFmpeg completo
+# 2 · Stage final — n8n (Debian) + FFmpeg completo
 ################################################################
 FROM n8nio/n8n:latest-debian
 USER root
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     imagemagick ghostscript tesseract-ocr \
     curl wget zip unzip tar jq openssh-client && \
     rm -rf /var/lib/apt/lists/*
-
-# Copia ffmpeg/ffprobe + libs necessárias
 COPY --from=builder /usr/local /usr/local
 ENV LD_LIBRARY_PATH=/usr/local/lib
-
 USER node
