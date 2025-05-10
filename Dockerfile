@@ -1,10 +1,10 @@
 FROM n8nio/n8n:latest
 USER root
 
-# 1) Habilita o repositório edge/testing para ter a versão completa do ffmpeg
+# Enable edge/testing repository for full FFmpeg build and RubberBand
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
-# 2) Atualiza pacotes e instala FFmpeg, codecs, extras, Rubber Band e ferramentas auxiliares
+# Update package index and install FFmpeg, codecs, filters, RubberBand and utilities
 RUN apk update && \
     apk add --no-cache \
       ffmpeg \
@@ -19,8 +19,6 @@ RUN apk update && \
       ladspa-sdk \
       frei0r-plugins \
       rubberband \
-      rubberband-libs \
-      rubberband-dev \
       curl \
       wget \
       zip \
