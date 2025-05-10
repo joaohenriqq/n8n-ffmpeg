@@ -2,28 +2,29 @@ FROM n8nio/n8n:latest
 
 USER root
 
-# 1) Instala glibc-compat para rodar o build glibc-linked do BtbN
+# 1) Instala glibc-compat (versão 2.35-r1) e utilitários para download/extrair
+ENV GLIBC_VER=2.35-r1
 RUN apk update && apk upgrade && \
     apk add --no-cache ca-certificates wget curl xz tar && \
-    # importa a chave e instala o glibc-compat
-    wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
-    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.36-r0/glibc-2.36-r0.apk && \
-    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.36-r0/glibc-bin-2.36-r0.apk && \
-    apk add --no-cache glibc-2.36-r0.apk glibc-bin-2.36-r0.apk && \
-    rm glibc-2.36-r0.apk glibc-bin-2.36-r0.apk && \
+    wget -q -O /etc/apk/keys/sgerrand.rsa.pub \
+      https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk && \
+    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk && \
+    apk add --no-cache glibc-${GLIBC_VER}.apk glibc-bin-${GLIBC_VER}.apk && \
+    rm glibc-${GLIBC_VER}.apk glibc-bin-${GLIBC_VER}.apk && \
     update-ca-certificates
 
-# 2) Remove o ffmpeg “mínimo” instalado via apk
+# 2) Remove o ffmpeg “mínimo” do Alpine
 RUN apk del ffmpeg
 
-# 3) Baixa e instala o FFmpeg static build mais recente do BtbN (linux64-gpl)
+# 3) Baixa e instala o build estático mais recente do BtbN para linux64-gpl
 RUN cd /tmp && \
     curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
       -o ffmpeg.tar.xz && \
     tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
     rm ffmpeg.tar.xz
 
-# 4) (Re)instala todas as suas ferramentas auxiliares sem alterar o resto
+# 4) Reinstala todas as suas ferramentas auxiliares sem alterar o resto
 RUN apk update && apk upgrade && \
     apk add --no-cache \
       lame libvpx x264 \
