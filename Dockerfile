@@ -1,8 +1,8 @@
-FROM n8nio/n8n:latest
+FROM n8nio/n8n:alpine
 
 USER root
 
-# 1) Instala glibc-compat (versão 2.35-r1) para rodar o build glibc-linked do BtbN
+# 1) Instala glibc-compat (2.35-r1) e utilitários necessários
 ENV GLIBC_VER=2.35-r1
 RUN apk update && apk upgrade && \
     apk add --no-cache ca-certificates wget curl xz tar && \
@@ -17,14 +17,14 @@ RUN apk update && apk upgrade && \
 # 2) Remove o ffmpeg “mínimo” do Alpine
 RUN apk del ffmpeg
 
-# 3) Baixa e instala o FFmpeg static build mais recente do BtbN (linux64-gpl)
+# 3) Baixa e instala o FFmpeg-Builds (linux64-gpl)
 RUN cd /tmp && \
     curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
       -o ffmpeg.tar.xz && \
     tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
     rm ffmpeg.tar.xz
 
-# 4) (Re)instala suas ferramentas auxiliares sem alterar o resto
+# 4) (Re)instala suas ferramentas auxiliares
 RUN apk update && apk upgrade && \
     apk add --no-cache \
       lame libvpx x264 \
