@@ -18,11 +18,10 @@ RUN apk update && apk add --no-cache \
     freetype-dev \
     fontconfig-dev \
     ladspa-dev \
-    frei0r-dev \
     rubberband-dev && \
     rm -rf /var/cache/apk/*
 
-# Clona e compila o FFmpeg com suporte completo a codecs e filtros
+# Clona e compila o FFmpeg com suporte a codecs, LADSPA e RubberBand (sem frei0r)
 WORKDIR /tmp/ffmpeg
 RUN git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git . && \
     ./configure \
@@ -42,16 +41,15 @@ RUN git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git . && \
       --enable-libfreetype \
       --enable-libfontconfig \
       --enable-ladspa \
-      --enable-frei0r \
       --enable-librubberband && \
     make -j$(nproc) && \
     make install && \
     rm -rf /tmp/ffmpeg
 
-# Reseta diretório de trabalho para raiz
+# Reseta diretório de trabalho
 WORKDIR /
 
-# Remove dependências de build e limpa cache em um único passo para manter a imagem leve
+# Remove dependências de build para manter imagem leve
 RUN apk del --purge \
     build-base \
     yasm \
@@ -68,7 +66,6 @@ RUN apk del --purge \
     freetype-dev \
     fontconfig-dev \
     ladspa-dev \
-    frei0r-dev \
     rubberband-dev && \
     rm -rf /var/cache/apk/*
 
@@ -78,6 +75,9 @@ RUN apk update && apk add --no-cache \
     imagemagick \
     ghostscript \
     tesseract-ocr \
+    ladspa \
+    frei0r-plugins \
+    rubberband \
     curl \
     wget \
     zip \
