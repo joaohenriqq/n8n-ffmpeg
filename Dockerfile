@@ -20,23 +20,23 @@ RUN cd /tmp && \
     tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
     rm ffmpeg.tar.xz
 
-# 4) Instala ferramentas auxiliares e plugins (frei0r-plugins, ladspa, rubberband etc.)
+# 4) Instala ferramentas auxiliares e plugins
 RUN apk update && apk add --no-cache \
-      imagemagick \        # ImageMagick (convert/magick)
-      ghostscript \        # processamento de PDFs
-      tesseract-ocr \      # OCR
-      fontconfig \         # drawtext dependency
-      freetype \           # drawtext dependency
-      ladspa \             # LADSPA filters
-      frei0r-plugins \     # Frei0r filters
-      rubberband \         # Rubber Band CLI
-      curl \               # HTTP client
-      wget \               # HTTP client
-      zip \                # ZIP utility
-      unzip \              # Unzip utility
-      tar \                # Tar utility
-      jq \                 # JSON processor
-      openssh-client && \  # SSH client
+    imagemagick \
+    ghostscript \
+    tesseract-ocr \
+    fontconfig \
+    freetype \
+    ladspa \
+    frei0r-plugins \
+    rubberband \
+    curl \
+    wget \
+    zip \
+    unzip \
+    tar \
+    jq \
+    openssh-client && \
     rm -rf /var/cache/apk/*
 
 USER node
