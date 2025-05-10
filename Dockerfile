@@ -3,28 +3,29 @@ USER root
 
 ENV GLIBC_VER=2.35-r1
 
-# 1) glibc-compat
+# 1) Instala glibc-compat via sgerrand, permitindo pacotes não assinados
 RUN apk update && apk upgrade && \
     apk add --no-cache ca-certificates wget curl xz tar && \
     wget -q -O /etc/apk/keys/sgerrand.rsa.pub \
-      https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+         https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
     wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk && \
     wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk && \
-    apk add --no-cache glibc-${GLIBC_VER}.apk glibc-bin-${GLIBC_VER}.apk && \
+    apk add --no-cache --allow-untrusted \
+         glibc-${GLIBC_VER}.apk glibc-bin-${GLIBC_VER}.apk && \
     rm glibc-${GLIBC_VER}.apk glibc-bin-${GLIBC_VER}.apk && \
     update-ca-certificates
 
-# 2) remove o ffmpeg mínimo
+# 2) Remove o ffmpeg mínimo do Alpine
 RUN apk del ffmpeg
 
-# 3) instala o FFmpeg-Builds diário do BtbN
+# 3) Instala o FFmpeg-Builds diário do BtbN (linux64-gpl)
 RUN cd /tmp && \
     curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
       -o ffmpeg.tar.xz && \
     tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
     rm ffmpeg.tar.xz
 
-# 4) reinstala suas ferramentas auxiliares
+# 4) Reinstala ferramentas auxiliares
 RUN apk update && apk upgrade && \
     apk add --no-cache \
       lame libvpx x264 \
