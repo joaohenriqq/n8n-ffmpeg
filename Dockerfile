@@ -1,35 +1,83 @@
 FROM n8nio/n8n:latest
 USER root
 
-# 1) Instala glibc para suportar builds GLIBC-linked
-ENV GLIBC_VERSION=2.35-r1
-RUN apk update && apk add --no-cache ca-certificates wget curl xz tar && \
-    wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
-    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk && \
-    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk && \
-    apk add --no-cache --allow-untrusted glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
-    rm glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
-    update-ca-certificates
-
-# 2) Remove o ffmpeg padrão do Alpine
-RUN apk del ffmpeg || true
-
-# 3) Baixa e instala o FFmpeg diário do BtbN (com frei0r, ladspa, drawtext etc.)
-RUN cd /tmp && \
-    curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o ffmpeg.tar.xz && \
-    tar -xJf ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
-    rm ffmpeg.tar.xz
-
-# 4) Instala ferramentas auxiliares e plugins
+# Instala dependências de build e bibliotecas de desenvolvimento
 RUN apk update && apk add --no-cache \
+    build-base \
+    yasm \
+    pkgconfig \
+    git \
+    libvpx-dev \
+    x264-dev \
+    lame-dev \
+    libvorbis-dev \
+    opus-dev \
+    libogg-dev \
+    libtheora-dev \
+    libass-dev \
+    freetype-dev \
+    fontconfig-dev \
+    ladspa-dev \
+    frei0r-dev \
+    rubberband-dev && \
+    rm -rf /var/cache/apk/*
+
+# Clona e compila o FFmpeg com suporte completo a codecs e filtros
+WORKDIR /tmp/ffmpeg
+RUN git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git . && \
+    ./configure \
+      --prefix=/usr \
+      --disable-static \
+      --enable-shared \
+      --enable-gpl \
+      --enable-nonfree \
+      --enable-libvpx \
+      --enable-libx264 \
+      --enable-libmp3lame \
+      --enable-libvorbis \
+      --enable-libopus \
+      --enable-libogg \
+      --enable-libtheora \
+      --enable-libass \
+      --enable-libfreetype \
+      --enable-libfontconfig \
+      --enable-ladspa \
+      --enable-frei0r \
+      --enable-librubberband && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/ffmpeg
+
+# Reseta diretório de trabalho para raiz
+WORKDIR /
+
+# Remove dependências de build e limpa cache em um único passo para manter a imagem leve
+RUN apk del --purge \
+    build-base \
+    yasm \
+    pkgconfig \
+    git \
+    libvpx-dev \
+    x264-dev \
+    lame-dev \
+    libvorbis-dev \
+    opus-dev \
+    libogg-dev \
+    libtheora-dev \
+    libass-dev \
+    freetype-dev \
+    fontconfig-dev \
+    ladspa-dev \
+    frei0r-dev \
+    rubberband-dev && \
+    rm -rf /var/cache/apk/*
+
+# Instala ferramentas de runtime e plugins extras
+RUN apk update && apk add --no-cache \
+    ffmpeg \
     imagemagick \
     ghostscript \
     tesseract-ocr \
-    fontconfig \
-    freetype \
-    ladspa \
-    frei0r-plugins \
-    rubberband \
     curl \
     wget \
     zip \
