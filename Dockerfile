@@ -59,6 +59,7 @@ RUN apk update && apk add --no-cache \
       libogg \
       fontconfig \
       freetype \
+    && ln -s /usr/lib/frei0r-1 /usr/lib/frei0r \
     && rm -rf /var/cache/apk/*
 
 USER node
