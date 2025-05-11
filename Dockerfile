@@ -62,4 +62,10 @@ RUN apk update && apk add --no-cache \
     && ln -s /usr/lib/frei0r-1 /usr/lib/frei0r \
     && rm -rf /var/cache/apk/*
 
+# 3) Instala Python e Vocos para re-sintetizar áudio com neural vocoder
+RUN apk add --no-cache python3 py3-pip \
+    && pip3 install --no-cache-dir vocos \
+    && apk del py3-pip \
+    && pip3 cache purge
+
 USER node
