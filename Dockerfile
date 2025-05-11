@@ -62,40 +62,4 @@ RUN apk update && apk add --no-cache \
     && ln -s /usr/lib/frei0r-1 /usr/lib/frei0r \
     && rm -rf /var/cache/apk/*
 
-# ─── ADIÇÕES PARA VOCODERS ─────────────────────────────────
-
-# 3) Instala glibc (via sgerrand) para compatibilidade com wheels PyTorch
-ENV GLIBC_RELEASE=2.35-r1
-RUN apk add --no-cache ca-certificates wget \
- && wget -q -O /etc/apk/keys/sgerrand.rsa.pub \
-      https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
- && wget "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_RELEASE}/glibc-${GLIBC_RELEASE}.apk" \
- && wget "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_RELEASE}/glibc-bin-${GLIBC_RELEASE}.apk" \
- && apk add --no-cache glibc-${GLIBC_RELEASE}.apk glibc-bin-${GLIBC_RELEASE}.apk \
- && rm glibc-*.apk :contentReference[oaicite:1]{index=1}
-
-# 4) Cria virtualenv e instala PyTorch, BigVGAN-v2 e WaveNeXt (com numpy e soundfile)
-RUN apk add --no-cache \
-      python3 \
-      python3-dev \
-      py3-pip \
-      build-base \
-      openblas-dev \
-      libstdc++ \
-      libgcc \
-    && python3 -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir \
-         torch \
-         numpy \
-         soundfile \
-         git+https://github.com/NVIDIA/BigVGAN.git@main#egg=bigvgan_v2 \
-         git+https://github.com/okamototakuya/wavenext.git@main#egg=wavenext \
-    && apk del py3-pip build-base \
-    && rm -rf /var/cache/apk/* :contentReference[oaicite:2]{index=2}
-
-# 5) Ajusta o PATH para usar o virtualenv nos workflows
-ENV PATH="/opt/venv/bin:${PATH}"
-
-# ─────────────────────────────────────────────────────────────
-
 USER node
