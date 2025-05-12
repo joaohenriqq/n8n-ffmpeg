@@ -5,7 +5,7 @@ USER root
 # 0) Remove o FFmpeg pré-instalado
 RUN apk del ffmpeg || true
 
-# 1) Instala dependências de build e runtime para o drawtext
+# 1) Instala dependências de build + runtime (incluindo todas as libs de codec)
 RUN apk add --no-cache --virtual .build-deps \
       build-base \
       yasm nasm pkgconfig git \
@@ -15,8 +15,22 @@ RUN apk add --no-cache --virtual .build-deps \
       ladspa-dev rubberband-dev frei0r-plugins-dev \
     && apk add --no-cache \
       freetype fontconfig libass ladspa rubberband frei0r-plugins \
+      imagemagick \
+      tesseract-ocr \
+      curl \
+      wget \
+      zip unzip \
+      tar \
+      jq \
+      openssh-client \
+      libvpx \
+      x264-libs \
+      lame-libs \
+      libvorbis \
+      opus \
+      libtheora \
     \
-# 2) Clona e compila o FFmpeg com todos os filtros
+# 2) Clona e compila o FFmpeg com drawtext e todos os filtros
     && git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg \
     && cd /tmp/ffmpeg \
     && ./configure \
