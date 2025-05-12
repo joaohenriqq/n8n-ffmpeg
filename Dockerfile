@@ -4,10 +4,23 @@ USER root
 
 # 1) Instala dependências de build e compila o FFmpeg com todos os codecs e plugins
 RUN apk add --no-cache --virtual .build-deps \
-      build-base yasm pkgconfig git nasm \
-      libvpx-dev x264-dev lame-dev libvorbis-dev opus-dev libtheora-dev \
-      libass-dev freetype-dev fontconfig-dev \
-      ladspa-dev rubberband-dev frei0r-plugins-dev \
+      build-base \
+      yasm \
+      pkgconfig \
+      git \
+      nasm \
+      libvpx-dev \
+      x264-dev \
+      lame-dev \
+      libvorbis-dev \
+      opus-dev \
+      libtheora-dev \
+      libass-dev \
+      freetype-dev \
+      fontconfig-dev \
+      ladspa-dev \
+      rubberband-dev \
+      frei0r-plugins-dev \
     && git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg \
     && cd /tmp/ffmpeg \
     && ./configure \
@@ -25,7 +38,7 @@ RUN apk add --no-cache --virtual .build-deps \
          --enable-libass \
          --enable-libfreetype \
          --enable-libfontconfig \
-         --enable-filter=drawtext \      # <-- garante suporte ao filtro drawtext
+         --enable-filter=drawtext \
          --enable-ladspa \
          --enable-librubberband \
          --enable-frei0r \
