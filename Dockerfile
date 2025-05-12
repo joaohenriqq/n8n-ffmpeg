@@ -1,35 +1,32 @@
-# 1) Puxa FFmpeg full (inclui drawtext, ladspa, rubberband, frei0r etc.)
-FROM jrottenberg/ffmpeg:5.1-alpine AS ffmpeg
+# Stage 1: usa FFmpeg full (inclui drawtext, frei0r, ladspa, rubberband etc.)
+FROM jrottenberg/ffmpeg:6.0-alpine as ffmpeg
 
-# 2) Imagem n8n oficial (Alpine)
+# Stage 2: imagem oficial do n8n (Alpine)
 FROM n8nio/n8n:latest
 
 USER root
 
-# 3) Copia apenas o binário e as libs custom do FFmpeg
-COPY --from=ffmpeg /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg
-COPY --from=ffmpeg /usr/local/bin/ffprobe  /usr/local/bin/ffprobe
-COPY --from=ffmpeg /usr/local/lib/*.so*     /usr/local/lib/
+# Copia binários e libs do FFmpeg
+COPY --from=ffmpeg /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg
+COPY --from=ffmpeg /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+COPY --from=ffmpeg /usr/local/lib/        /usr/local/lib/
 
-# 4) Ajusta o loader para procurar em /usr/local/lib
-ENV LD_LIBRARY_PATH=/usr/local/lib
+# Garante que o sistema reconheça as libs do FFmpeg
+ENV LD_LIBRARY_PATH="/usr/local/lib"
 
-# 5) Restaura suas ferramentas auxiliares de runtime
-RUN apk update && apk add --no-cache \
-      imagemagick \
-      tesseract-ocr \
-      curl \
-      wget \
-      zip \
-      unzip \
-      tar \
-      jq \
-      openssh-client \
-      frei0r-plugins \
-      ladspa \
-      rubberband \
-      fontconfig \
-      freetype \
-      libass
+# Instala ferramentas auxiliares de runtime
+RUN apk add --no-cache \
+    imagemagick \
+    tesseract-ocr \
+    ghostscript \
+    curl \
+    wget \
+    zip unzip \
+    tar \
+    jq \
+    openssh-client \
+    fontconfig \
+    freetype \
+    libass
 
 USER node
