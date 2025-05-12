@@ -1,59 +1,18 @@
-# 1) Stage de build: compila FFmpeg estático com drawtext
-FROM alpine:edge AS ffmpeg-build
 
-RUN apk add --no-cache \
-      build-base \
-      git \
-      yasm \
-      nasm \
-      pkgconfig \
-      libvpx-dev \
-      x264-dev \
-      lame-dev \
-      libvorbis-dev \
-      opus-dev \
-      libtheora-dev \
-      libass-dev \
-      freetype-dev \
-      fontconfig-dev \
-      ladspa-dev \
-      rubberband-dev \
-      frei0r-plugins-dev
+# 1) Build do FFmpeg completo (com todos os filtros, incluindo drawtext)
+FROM jrottenberg/ffmpeg:5.1-alpine AS ffmpeg
 
-WORKDIR /usr/src/ffmpeg
-RUN git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git . \
-  && ./configure \
-       --prefix=/usr/local \
-       --disable-shared \
-       --enable-static \
-       --enable-gpl \
-       --enable-nonfree \
-       --enable-libvpx \
-       --enable-libx264 \
-       --enable-libmp3lame \
-       --enable-libvorbis \
-       --enable-libopus \
-       --enable-libtheora \
-       --enable-libass \
-       --enable-libfreetype \
-       --enable-libfontconfig \
-       --enable-ladspa \
-       --enable-librubberband \
-       --enable-frei0r \
-  && make -j$(nproc) \
-  && make install \
-  && rm -rf /usr/src/ffmpeg
-
-# 2) Stage final: imagem n8n com FFmpeg estático
+# 2) Imagem n8n oficial
 FROM n8nio/n8n:latest
 
 USER root
 
-# Copia binários estáticos do build anterior
-COPY --from=ffmpeg-build /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
-COPY --from=ffmpeg-build /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+# 3) Copia o FFmpeg compilado com drawtext e todas as libs
+COPY --from=ffmpeg /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg
+COPY --from=ffmpeg /usr/local/bin/ffprobe  /usr/local/bin/ffprobe
+COPY --from=ffmpeg /usr/local/lib          /usr/local/lib
 
-# Instala suas ferramentas de runtime (ImageMagick, Tesseract, etc)
+# 4) Garante que as dependências de runtime da sua stack n8n continuem instaladas
 RUN apk add --no-cache \
       imagemagick \
       tesseract-ocr \
@@ -62,6 +21,12 @@ RUN apk add --no-cache \
       zip unzip \
       tar \
       jq \
-      openssh-client
+      openssh-client \
+      frei0r-plugins \
+      ladspa \
+      rubberband \
+      fontconfig \
+      freetype \
+      libass
 
 USER node
