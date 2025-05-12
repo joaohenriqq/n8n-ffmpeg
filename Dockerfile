@@ -2,28 +2,21 @@ FROM n8nio/n8n:latest
 
 USER root
 
-# 0) Remove qualquer FFmpeg pré-instalado para garantir que o binário compilado seja usado
-RUN apk del --no-network ffmpeg || true
+# 0) Remove o FFmpeg pré-instalado
+RUN apk del ffmpeg || true
 
-# 1) Instala dependências de build e compila o FFmpeg com todos os codecs, plugins e drawtext
+# 1) Instala dependências de build e runtime para o drawtext
 RUN apk add --no-cache --virtual .build-deps \
       build-base \
-      yasm \
-      pkgconfig \
-      git \
-      nasm \
-      libvpx-dev \
-      x264-dev \
-      lame-dev \
-      libvorbis-dev \
-      opus-dev \
-      libtheora-dev \
-      libass-dev \
-      freetype-dev \
-      fontconfig-dev \
-      ladspa-dev \
-      rubberband-dev \
-      frei0r-plugins-dev \
+      yasm nasm pkgconfig git \
+      libvpx-dev x264-dev \
+      lame-dev libvorbis-dev opus-dev libtheora-dev \
+      libass-dev freetype-dev fontconfig-dev \
+      ladspa-dev rubberband-dev frei0r-plugins-dev \
+    && apk add --no-cache \
+      freetype fontconfig libass ladspa rubberband frei0r-plugins \
+    \
+# 2) Clona e compila o FFmpeg com todos os filtros
     && git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg \
     && cd /tmp/ffmpeg \
     && ./configure \
@@ -46,38 +39,10 @@ RUN apk add --no-cache --virtual .build-deps \
          --enable-frei0r \
     && make -j$(nproc) \
     && make install \
-    && cd / \
     && rm -rf /tmp/ffmpeg \
-    && apk del .build-deps
-
-# 2) Instala ferramentas de runtime e bibliotecas necessárias
-RUN apk update && apk add --no-cache \
-      imagemagick \
-      ghostscript \
-      tesseract-ocr \
-      curl \
-      wget \
-      zip \
-      unzip \
-      tar \
-      jq \
-      openssh-client \
-      ladspa \
-      frei0r-plugins \
-      rubberband-libs \
-      libass \
-      libvpx \
-      x264-libs \
-      lame-libs \
-      libvorbis \
-      opus \
-      libtheora \
-      libogg \
-      fontconfig \
-      freetype \
-    && ln -s /usr/lib/frei0r-1 /usr/lib/frei0r \
-    && rm -rf /var/cache/apk/*
-
-ENV PATH="/usr/local/bin:${PATH}"
+    \
+# 3) Limpa dependências de build e atualiza cache de fontes
+    && apk del .build-deps \
+    && fc-cache -f
 
 USER node
