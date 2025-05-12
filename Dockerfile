@@ -12,7 +12,7 @@ COPY --from=ffmpeg /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg
 COPY --from=ffmpeg /usr/local/bin/ffprobe  /usr/local/bin/ffprobe
 COPY --from=ffmpeg /usr/local/lib          /usr/local/lib
 
-# 4) Garante que as dependências de runtime da sua stack n8n continuem instaladas
+# 4) Garante dependências de runtime, incluindo OpenSSL1.1
 RUN apk add --no-cache \
       imagemagick \
       tesseract-ocr \
@@ -27,6 +27,7 @@ RUN apk add --no-cache \
       rubberband \
       fontconfig \
       freetype \
-      libass
+      libass \
+      openssl1.1
 
 USER node
