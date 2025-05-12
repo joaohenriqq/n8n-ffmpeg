@@ -25,6 +25,7 @@ RUN apk add --no-cache --virtual .build-deps \
          --enable-libass \
          --enable-libfreetype \
          --enable-libfontconfig \
+         --enable-filter=drawtext \      # <-- garante suporte ao filtro drawtext
          --enable-ladspa \
          --enable-librubberband \
          --enable-frei0r \
