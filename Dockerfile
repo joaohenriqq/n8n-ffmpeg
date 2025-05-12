@@ -2,7 +2,10 @@ FROM n8nio/n8n:latest
 
 USER root
 
-# 1) Instala dependências de build e compila o FFmpeg com todos os codecs e plugins
+# 0) Remove qualquer FFmpeg pré-instalado para garantir que o binário compilado seja usado
+RUN apk del --no-network ffmpeg || true
+
+# 1) Instala dependências de build e compila o FFmpeg com todos os codecs, plugins e drawtext
 RUN apk add --no-cache --virtual .build-deps \
       build-base \
       yasm \
@@ -24,7 +27,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg \
     && cd /tmp/ffmpeg \
     && ./configure \
-         --prefix=/usr \
+         --prefix=/usr/local \
          --disable-static \
          --enable-shared \
          --enable-gpl \
@@ -38,7 +41,6 @@ RUN apk add --no-cache --virtual .build-deps \
          --enable-libass \
          --enable-libfreetype \
          --enable-libfontconfig \
-         --enable-filter=drawtext \
          --enable-ladspa \
          --enable-librubberband \
          --enable-frei0r \
@@ -48,7 +50,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && rm -rf /tmp/ffmpeg \
     && apk del .build-deps
 
-# 2) Instala ferramentas de runtime e bibliotecas necessárias para o FFmpeg e outros serviços
+# 2) Instala ferramentas de runtime e bibliotecas necessárias
 RUN apk update && apk add --no-cache \
       imagemagick \
       ghostscript \
@@ -75,5 +77,7 @@ RUN apk update && apk add --no-cache \
       freetype \
     && ln -s /usr/lib/frei0r-1 /usr/lib/frei0r \
     && rm -rf /var/cache/apk/*
+
+ENV PATH="/usr/local/bin:${PATH}"
 
 USER node
